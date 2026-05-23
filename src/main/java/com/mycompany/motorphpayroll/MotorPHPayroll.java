@@ -176,7 +176,7 @@ public class MotorPHPayroll {
 
                     JOptionPane.showMessageDialog(
                             loginFrame,
-                            "Please enter a valid username or password."
+                            "Invalid login.Please enter a valid username or password."
                     );
                 }
             }
@@ -576,7 +576,7 @@ public class MotorPHPayroll {
             }
 
             employeeOutputArea.setText(
-                    "Sorry. Employee number does not exist. Please type the correct one."
+                    "Sorry. Employee number does not exist. Please type the correct employee number."
             );
 
         } catch (Exception e) {
@@ -659,7 +659,7 @@ public class MotorPHPayroll {
             if (!employeeFound) {
 
                 payrollOutputArea.append(
-                        "\nSorry. Employee number does not exist. Please type the correct one.\n"
+                        "\nSorry. Employee number does not exist. Please type the correct employee number.\n"
                 );
 
                 return;
