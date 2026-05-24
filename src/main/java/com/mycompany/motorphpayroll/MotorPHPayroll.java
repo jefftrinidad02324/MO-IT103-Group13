@@ -1,6 +1,25 @@
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  */
+/*
+ * =====================================================
+ * MOTORPH PAYROLL SYSTEM
+ * =====================================================
+ * This program is a payroll management system designed
+ * to manage employee records, attendance tracking, and
+ * salary computation.
+ *
+ * It allows:
+ * 1. Employees to view their personal information
+ * 2. Payroll staff to process salary reports
+ * 3. Automatic payroll computation with deductions
+ *
+ * The system reads employee and attendance records
+ * from CSV files and generates payroll reports based
+ * on actual hours worked.
+ * =====================================================
+ */
+
 package com.mycompany.motorphpayroll;
 
 import javax.swing.*;
@@ -12,44 +31,66 @@ import java.util.ArrayList;
 
 public class MotorPHPayroll {
 
+// =====================================================
+// EMPLOYEE INFORMATION FILE LOCATION
+// This stores the file containing employee details
+// such as employee number, name, birthday, and salary.
+// =====================================================
+    
+        // =====================================================
+    // EMPLOYEE INFORMATION FILE LOCATION
+    // This stores the file containing employee details
+    // such as employee number, name, birthday, and salary.
     // =====================================================
-    // FILE PATHS
-    // =====================================================
+    
+      
     static String employeeDetailsFile =
             "src/main/java/com/mycompany/motorphpayroll/Employee Details.csv";
 
+    // =====================================================
+    // EMPLOYEE ATTENDANCE FILE LOCATION
+    // This stores employee daily attendance records used
+    // for payroll hour computation.
+    // =====================================================
     static String attendanceRecordFile =
             "src/main/java/com/mycompany/motorphpayroll/Employee Attendance Record.csv";
 
     // =====================================================
-    // WORK HOURS
+    // OFFICIAL WORKING HOURS SETTINGS
+    // Defines standard company work schedule used for
+    // payroll calculations.
     // =====================================================
     static final double START_WORK = 8.0;
     static final double END_WORK = 17.0;
-
+    
     // =====================================================
-    // FRAMES
+    // SYSTEM WINDOWS OR SCREENS
+    // Main program windows shown to users.
     // =====================================================
     static JFrame loginFrame;
     static JFrame employeeFrame;
     static JFrame payrollFrame;
 
     // =====================================================
-    // EMPLOYEE COMPONENTS
+    // EMPLOYEE PORTAL INPUT AND DISPLAY COMPONENTS
+    // Used for entering employee number and showing
+    // employee information.
     // =====================================================
     static JTextField employeeNumberField;
     static JTextField employeeNameField;
     static JTextArea employeeOutputArea;
 
     // =====================================================
-    // PAYROLL COMPONENTS
+    // PAYROLL STAFF INPUT AND DISPLAY COMPONENTS
+    // Used for processing payroll and showing reports.
     // =====================================================
     static JTextField payrollEmployeeNumberField;
     static JTextField payrollEmployeeNameField;
     static JTextArea payrollOutputArea;
 
     // =====================================================
-    // MAIN METHOD
+    // MAIN PROGRAM STARTING POINT
+    // Starts the system and opens the login page.
     // =====================================================
     public static void main(String[] args) {
 
@@ -64,7 +105,8 @@ public class MotorPHPayroll {
     }
 
     // =====================================================
-    // LOGIN PAGE
+    // USER LOGIN AND ACCESS VALIDATION
+    // Displays login page and checks user credentials.
     // =====================================================
     public static void showLoginPage() {
 
@@ -176,7 +218,7 @@ public class MotorPHPayroll {
 
                     JOptionPane.showMessageDialog(
                             loginFrame,
-                            "Invalid login.Please enter a valid username or password."
+                            "Invalid login. Please enter correct credentials."
                     );
                 }
             }
@@ -188,7 +230,8 @@ public class MotorPHPayroll {
     }
 
     // =====================================================
-    // EMPLOYEE PAGE
+    // EMPLOYEE INFORMATION VIEWING PAGE
+    // Allows employees to view their personal records.
     // =====================================================
     public static void showEmployeePage() {
 
@@ -337,9 +380,9 @@ public class MotorPHPayroll {
 
         employeeFrame.setVisible(true);
     }
-
     // =====================================================
-    // PAYROLL PAGE
+    // PAYROLL PROCESSING PAGE
+    // Allows payroll staff to compute salary reports.
     // =====================================================
     public static void showPayrollPage() {
 
@@ -523,7 +566,8 @@ public class MotorPHPayroll {
     }
 
     // =====================================================
-    // DISPLAY EMPLOYEE INFO
+    // EMPLOYEE INFORMATION SEARCH AND DISPLAY
+    // Searches employee records using employee number.
     // =====================================================
     public static void displayEmployeeInfo(String employeeId) {
 
@@ -588,7 +632,8 @@ public class MotorPHPayroll {
     }
 
     // =====================================================
-    // CALCULATE PAYROLL
+    // PAYROLL COMPUTATION AND REPORT GENERATION
+    // Computes salary and generates payroll reports.
     // =====================================================
     public static void calculatePayroll(String employeeId) {
 
@@ -932,7 +977,8 @@ public class MotorPHPayroll {
     }
 
     // =====================================================
-    // COMPUTE DAILY WORK
+    // DAILY WORK HOURS CALCULATION
+    // Computes valid hours worked based on company rules.
     // =====================================================
     public static double[] computeDailyWork(
             String timeIn,
@@ -970,7 +1016,8 @@ public class MotorPHPayroll {
     }
 
     // =====================================================
-    // MONTH NAME
+    // MONTH NUMBER TO MONTH NAME CONVERSION
+    // Converts month numbers into readable names.
     // =====================================================
     public static String getMonthName(int month) {
 
@@ -1017,7 +1064,8 @@ public class MotorPHPayroll {
     }
 
     // =====================================================
-    // SSS
+    // SSS CONTRIBUTION CALCULATION
+    // Determines SSS deduction based on salary.
     // =====================================================
     public static double getSSS(double salary) {
 
@@ -1035,7 +1083,8 @@ public class MotorPHPayroll {
     }
 
     // =====================================================
-    // TAX
+    // WITHHOLDING TAX CALCULATION
+    // Computes employee tax deduction.
     // =====================================================
     public static double getTax(double income) {
 
@@ -1053,7 +1102,8 @@ public class MotorPHPayroll {
     }
 
     // =====================================================
-    // CSV SPLIT
+    // CSV DATA SEPARATION AND ORGANIZATION
+    // Separates CSV values into readable fields.
     // =====================================================
     public static String[] manualSplit(String line) {
 
