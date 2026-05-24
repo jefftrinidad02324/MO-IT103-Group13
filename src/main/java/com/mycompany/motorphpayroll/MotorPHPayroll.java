@@ -36,14 +36,8 @@ public class MotorPHPayroll {
 // This stores the file containing employee details
 // such as employee number, name, birthday, and salary.
 // =====================================================
-    
-        // =====================================================
-    // EMPLOYEE INFORMATION FILE LOCATION
-    // This stores the file containing employee details
-    // such as employee number, name, birthday, and salary.
-    // =====================================================
-    
-      
+
+        
     static String employeeDetailsFile =
             "src/main/java/com/mycompany/motorphpayroll/Employee Details.csv";
 
