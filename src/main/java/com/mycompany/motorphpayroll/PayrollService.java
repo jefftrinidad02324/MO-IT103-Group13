@@ -3,376 +3,389 @@ package com.mycompany.motorphpayroll;
 import javax.swing.*;
 import java.io.BufferedReader;
 import java.io.FileReader;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * This class handles all the calculations for the MotorPH employee payroll system.
- * It reads files containing employee information and time logs, calculates their total earnings, 
- * subtracts government deductions, and prints the result to the screen.
+ * This class handles the core payroll processing logic for the system.
+ * It reads employee data and attendance text files, calculates regular pay,
+ * computes government deductions, and displays payroll summaries onto the screen.
  */
 public class PayrollService {
 
-    // File path pointing to where the spreadsheet of employee personal information is saved
+    // File paths pointing to where the spreadsheet records (CSV files) are saved.
     private static final String EMPLOYEE_DETAILS_FILE =
             "src/main/java/com/mycompany/motorphpayroll/Employee Details.csv";
 
-    // File path pointing to where the spreadsheet of daily login/logout records is saved
     private static final String ATTENDANCE_RECORD_FILE =
             "src/main/java/com/mycompany/motorphpayroll/Employee Attendance Record.csv";
 
-    // Standard business shift hours (8:00 AM to 5:00 PM)
-    private static final double START_WORK = 8.0;
-    private static final double END_WORK = 17.0;
-
-    // ================= PROCESS ONE =================
     /**
-     * Calculates and displays payroll for a single employee based on their ID.
+     * Processes payroll for a single employee based on the ID entered into the system.
+     * It handles entry verification errors and triggers a confirmation window when successful.
      */
     public static void processOne(String employeeId, JTextField nameField, JTextArea outputArea) {
-        outputArea.setText(""); // Clear the text screen before displaying the new results
-        calculate(employeeId, nameField, outputArea); // Run the payroll calculations
-    }
+        outputArea.setText(""); // Clear out old text on the screen
 
-    // ================= PROCESS ALL =================
-    /**
-     * Loops through a specific batch of employee IDs (from 10001 to 10034) 
-     * and calculates payroll for everyone all at once.
-     */
-    public static void processAll(JTextArea outputArea) {
-        outputArea.setText(""); // Clear the text screen before starting
-
-        // Go through each employee ID sequentially in a loop
-        for (int id = 10001; id <= 10034; id++) {
-            calculate(String.valueOf(id), null, outputArea); // Run calculation for the current ID
+        // Check if the user left the employee number field empty.
+        if (employeeId == null || employeeId.trim().isEmpty()) {
+            outputArea.setText("Please enter an employee number before processing payroll.");
+            return;
         }
 
-        // Print a final message to the screen when everyone has been processed
-        outputArea.append("\n====================================================\n");
-        outputArea.append("ALL PAYROLL PROCESSING COMPLETE\n");
-        outputArea.append("====================================================\n");
+        // Validate that the ID follows the correct sequence (must start at 10001).
+        if (!EmployeeService.isEmployeeNumberInSeries(employeeId.trim())) {
+            if (nameField != null) {
+                nameField.setText("");
+            }
+            outputArea.setText("Invalid employee number. Employee numbers must be in sequence starting from 10001.");
+            return;
+        }
+
+        // Run the payroll calculations for this single employee.
+        boolean successful = calculate(employeeId.trim(), nameField, outputArea, null);
+
+        // Show a popup notification if the report was built successfully.
+        if (successful) {
+            JOptionPane.showMessageDialog(null,
+                    "Payroll report has been generated successfully.");
+        }
     }
 
-    // ================= MAIN CALCULATION =================
     /**
-     * This is the core engine that fetches data, loops through the dates, 
-     * computes gross/net amounts, and prints out the final paycheck stub.
+     * Processes payroll for every single employee found in the records file all at once.
+     * Skips invalid entries and prints a complete grand total summary at the very end.
      */
-    private static boolean calculate(String employeeId, JTextField nameField, JTextArea outputArea) {
+    public static void processAll(JTextArea outputArea) {
+        outputArea.setText(""); // Clear out old text on the screen
+
+        int processedCount = 0; // Keeps track of how many records were successfully processed
 
         try {
-            // Temporary holding slots for the employee data we are about to find
-            String name = "";
-            String birthday = "";
-            double basicSalary = 0;
-            double hourlyRate = 0;
+            // Read and load all employees from the text database.
+            List<String[]> employees = loadEmployees();
 
-            boolean found = false; // Kept as "false" until we successfully locate the employee in the file
+            // Loop through each employee in the list one by one.
+            for (int i = 0; i < employees.size(); i++) {
+                String[] employee = employees.get(i);
+                String employeeId = employee[0].trim();
 
-            // ================= READ EMPLOYEE FILE =================
-            // Open the Employee Details spreadsheet
-            try (BufferedReader br = new BufferedReader(new FileReader(EMPLOYEE_DETAILS_FILE))) {
+                // If an ID is invalid, skip this person and print a note on screen.
+                if (!EmployeeService.isEmployeeNumberInSeries(employeeId)) {
+                    outputArea.append("\nSkipped invalid employee number: " + employeeId + "\n");
+                    continue;
+                }
 
-                String line;
-                br.readLine(); // Skip the very first header line (e.g., "ID, Name, Salary")
+                // Run calculations for the valid employee.
+                boolean successful = calculate(employeeId, null, outputArea, null);
 
-                // Read the file line-by-line until the end
-                while ((line = br.readLine()) != null) {
-
-                    if (line.trim().isEmpty()) continue; // Skip empty rows
-
-                    String[] data = manualSplit(line); // Break the row up into separate text columns
-
-                    // Check if the ID in this column matches the ID we are searching for
-                    if (data[0].trim().equals(employeeId.trim())) {
-
-                        // Combine First Name and Last Name into one full name
-                        name = data[2].trim() + " " + data[1].trim();
-                        birthday = data[3].trim();
-
-                        // Grab the basic monthly salary (column index 13) and hourly rate (column index 18)
-                        basicSalary = parseDoubleSafe(data[13]);
-                        hourlyRate = parseDoubleSafe(data[18]);
-
-                        found = true; // Mark that we found the person successfully
-
-                        // If a designated text box on the visual screen is provided, update it with their name
-                        if (nameField != null) {
-                            nameField.setText(name);
-                        }
-                        break; // Stop looking through the file since we found the match
-                    }
+                if (successful) {
+                    processedCount++; // Increment our counter for successful runs
                 }
             }
 
-            // If the loop finished and the employee wasn't found, print an error and stop
-            if (!found) {
-                outputArea.append("\nEmployee not found: " + employeeId);
+            // Print the final grand summary layout to the screen window.
+            outputArea.append("\n====================================================\n");
+            outputArea.append("ALL PAYROLL PROCESSING COMPLETE\n");
+            outputArea.append("Employees processed: " + processedCount + "\n");
+            outputArea.append("====================================================\n");
+
+            // Pop up a system message confirming everything finished successfully.
+            JOptionPane.showMessageDialog(null,
+                    "Payroll reports for all employees have been generated successfully.");
+
+        } catch (Exception e) {
+            // Catching any file reading problems safely without crashing the system.
+            outputArea.setText("We were unable to process all payroll reports. Please verify the employee and attendance CSV files and try again.");
+        }
+    }
+
+    /**
+     * Loops through every record to accumulate overall totals (hours, gross pay, deductions, net pay)
+     * and compiles a clean text report summary for the system dashboard.
+     */
+    public static String generateSummary() {
+        StringBuilder summary = new StringBuilder();
+
+        // Variables used to sum up the company-wide grand totals
+        int employeeCount = 0;
+        int attendanceCount = 0;
+        double totalHours = 0;
+        double totalGrossPay = 0;
+        double totalDeductions = 0;
+        double totalNetPay = 0;
+
+        try {
+            // Fetch raw lists from the data files
+            List<String[]> employees = loadEmployees();
+            List<String[]> attendanceRecords = loadAttendance();
+
+            employeeCount = employees.size();
+            attendanceCount = attendanceRecords.size();
+
+            // Analyze every single employee
+            for (int i = 0; i < employees.size(); i++) {
+                String[] employee = employees.get(i);
+                String employeeId = employee[0].trim();
+
+                if (!EmployeeService.isEmployeeNumberInSeries(employeeId)) {
+                    continue; // Skip invalid IDs
+                }
+
+                // Read salary info from standard columns (Column 14 for basic salary, Column 19 for hourly rate).
+                double basicSalary = Utility.parseDoubleSafe(employee[13]);
+                double hourlyRate = Utility.parseDoubleSafe(employee[18]);
+
+                double employeeHours = 0;
+
+                // Match and sum up all attendance log hours belonging to this specific employee
+                for (int j = 0; j < attendanceRecords.size(); j++) {
+                    String[] record = attendanceRecords.get(j);
+
+                    if (!record[0].trim().equals(employeeId)) {
+                        continue; // Keep looking if the log belongs to someone else
+                    }
+
+                    // Extract the month number from the date string (Format assumed: Month/Day/Year).
+                    String[] dateParts = record[3].split("/");
+                    int month = Integer.parseInt(dateParts[0]);
+
+                    // Only look at records falling within June (Month 6) through December (Month 12).
+                    if (month < 6 || month > 12) {
+                        continue;
+                    }
+
+                    // Compute the hours for this specific day shift and add them to the running total.
+                    double[] work = Utility.computeHours(record[4], record[5]);
+                    employeeHours += work[0];
+                }
+
+                // If the employee actually logged hours during this date scope, compute their financial totals.
+                if (employeeHours > 0) {
+                    double grossPay = employeeHours * hourlyRate;
+                    
+                    // Deductions Breakdown
+                    double sss = Utility.getSSS(basicSalary);
+                    double philHealth = (basicSalary * 0.03) / 2; // 3% split equally between company & employee
+                    double pagIbig = basicSalary <= 1500 ? basicSalary * 0.01 : basicSalary * 0.02; // 1% or 2% rate based on basic salary limit
+                    
+                    double taxableIncome = Math.max(0, grossPay - (sss + philHealth + pagIbig));
+                    double tax = Utility.getTax(taxableIncome);
+                    double deductions = sss + philHealth + pagIbig + tax;
+                    double netPay = grossPay - deductions;
+
+                    // Add individual results to global corporate metrics
+                    totalHours += employeeHours;
+                    totalGrossPay += grossPay;
+                    totalDeductions += deductions;
+                    totalNetPay += netPay;
+                }
+            }
+
+            // Build out the physical text string structure for the summary printout view
+            summary.append("PAYROLL SUMMARY REPORT\n");
+            summary.append("====================================================\n");
+            summary.append("Total employee records: ").append(employeeCount).append("\n");
+            summary.append("Total attendance records: ").append(attendanceCount).append("\n");
+            summary.append("Payroll coverage: June to December\n");
+            summary.append("First cutoff: 1st day to 15th day of the month\n");
+            summary.append("Second cutoff: 16th day to end of the month\n");
+            summary.append("\n");
+            summary.append("Total hours worked: ").append(Utility.formatNumber(totalHours)).append("\n");
+            summary.append("Total gross pay: ").append(Utility.formatNumber(totalGrossPay)).append("\n");
+            summary.append("Total deductions: ").append(Utility.formatNumber(totalDeductions)).append("\n");
+            summary.append("Total net pay: ").append(Utility.formatNumber(totalNetPay)).append("\n");
+            summary.append("====================================================\n");
+            summary.append("Summary has been generated successfully.\n");
+
+        } catch (Exception e) {
+            summary.append("We were unable to generate the payroll summary. Please verify the required CSV files and try again.");
+        }
+
+        return summary.toString();
+    }
+
+    /**
+     * Core calculator method. It evaluates data for a target employee, splits work hours into 
+     * two separate cutoffs (1st-15th and 16th-End), applies statutory taxes, and types out 
+     * a detailed payslip line-by-line onto the user interface text field.
+     */
+    private static boolean calculate(String employeeId, JTextField nameField, JTextArea outputArea, double[] summaryTotals) {
+        try {
+            // Confirm the sequence rule
+            if (!EmployeeService.isEmployeeNumberInSeries(employeeId)) {
+                outputArea.append("\nInvalid employee number " + employeeId + ". Employee numbers must be in sequence starting from 10001.\n");
                 return false;
             }
 
-            // ================= LOAD ATTENDANCE =================
-            // Create an empty memory list to load the attendance text file into
-            List<String[]> records = new ArrayList<>();
+            // Fetch the individual data profile from the external employee service
+            String[] employee = EmployeeService.findEmployee(employeeId);
 
-            // Open the attendance record spreadsheet
-            try (BufferedReader br = new BufferedReader(new FileReader(ATTENDANCE_RECORD_FILE))) {
-
-                String line;
-                br.readLine(); // Skip the column headers line
-
-                // Read every single log-in/log-out row and save it into our memory list
-                while ((line = br.readLine()) != null) {
-                    records.add(line.split(","));
-                }
+            if (employee == null) {
+                outputArea.append("\nWe couldn't locate employee number " + employeeId + ". Please check the employee number and try again.\n");
+                return false;
             }
 
-            boolean hasData = false; // Remains "false" until we discover matching attendance data
+            // Pull name components and basic financial rates from profile columns
+            String name = employee[2].trim() + " " + employee[1].trim(); // First Name + Last Name
+            String birthday = employee[3].trim();
+            double basicSalary = Utility.parseDoubleSafe(employee[13]);
+            double hourlyRate = Utility.parseDoubleSafe(employee[18]);
 
-            // ================= MONTH LOOP (JUNE–DECEMBER ONLY) =================
-            // Cycle through each month starting from June (6) up to December (12)
+            // Set the graphic interface text box to show the name instantly
+            if (nameField != null) {
+                nameField.setText(name);
+            }
+
+            List<String[]> records = loadAttendance();
+            boolean hasData = false;
+
+            // Process calculations independently for each month from June (6) to December (12).
             for (int month = 6; month <= 12; month++) {
+                double firstCutoffHours = 0;
+                double secondCutoffHours = 0;
+                double firstCutoffLate = 0;
+                double secondCutoffLate = 0;
 
-                // Containers to track hours worked and hours late for both cutoff periods
-                double cutoff1 = 0;      // Days 1-15 total hours worked
-                double cutoff2 = 0;      // Days 16-end total hours worked
-                double cutoff1Late = 0;  // Days 1-15 total late occurrences
-                double cutoff2Late = 0;  // Days 16-end total late occurrences
+                // Sort out hours from the full log database file matching this month and ID
+                for (int i = 0; i < records.size(); i++) {
+                    String[] record = records.get(i);
 
-                // Scan through every attendance row loaded earlier
-                for (String[] r : records) {
+                    if (!record[0].trim().equals(employeeId)) {
+                        continue;
+                    }
 
-                    // Skip the row if it belongs to a different employee
-                    if (!r[0].trim().equals(employeeId.trim())) continue;
+                    String[] dateParts = record[3].split("/");
+                    int monthNumber = Integer.parseInt(dateParts[0]);
+                    int dayNumber = Integer.parseInt(dateParts[1]);
 
-                    // Parse out the month and the day from the date format (MM/DD/YYYY)
-                    String[] date = r[3].split("/");
-                    int m = Integer.parseInt(date[0]);
-                    int day = Integer.parseInt(date[1]);
+                    if (monthNumber != month) {
+                        continue;
+                    }
 
-                    // Skip if the row's month doesn't match the specific month loop we are on
-                    if (m != month) continue;
+                    double[] work = Utility.computeHours(record[4], record[5]);
 
-                    // Calculate the daily hours worked [0] and late penalty status [1] from time-in and time-out
-                    double[] work = computeDailyWork(r[4], r[5]);
-
-                    // Sort the calculated daily metrics into Cutoff 1 or Cutoff 2 based on the day of the month
-                    if (day <= 15) {
-                        cutoff1 += work[0];
-                        cutoff1Late += work[1];
+                    // Assign time metrics depending on the day of the month (Cutoff 1 vs Cutoff 2).
+                    if (dayNumber <= 15) {
+                        firstCutoffHours += work[0];
+                        firstCutoffLate += work[1];
                     } else {
-                        cutoff2 += work[0];
-                        cutoff2Late += work[1];
+                        secondCutoffHours += work[0];
+                        secondCutoffLate += work[1];
                     }
                 }
 
-                // If the employee didn't work a single hour in this specific month, skip calculation for this month
-                if (cutoff1 == 0 && cutoff2 == 0) continue;
+                // If this person has absolutely no recorded active time in this month, skip creating a receipt.
+                if (firstCutoffHours == 0 && secondCutoffHours == 0) {
+                    continue;
+                }
 
-                hasData = true; // Employee has real historical data for this month
+                hasData = true; // Confirms valid calculation records were found
 
-                // ================= COMPUTATION =================
+                String monthName = Utility.getMonthName(month);
+                double firstGross = firstCutoffHours * hourlyRate;
+                double secondGross = secondCutoffHours * hourlyRate;
+                double totalGross = firstGross + secondGross;
 
-                // Multiply total hours worked by hourly rate to get Gross Salary for each period
-                double firstCutoffSalary = cutoff1 * hourlyRate;
-                double secondCutoffSalary = cutoff2 * hourlyRate;
+                // Government contribution values lookup
+                double sss = Utility.getSSS(basicSalary);
+                double philHealth = (basicSalary * 0.03) / 2;
+                double pagIbig = basicSalary <= 1500 ? basicSalary * 0.01 : basicSalary * 0.02;
+                
+                // Subtract combined statutory benefits before applying tax rates
+                double taxableIncome = Math.max(0, totalGross - (sss + philHealth + pagIbig));
+                double tax = Utility.getTax(taxableIncome);
+                double totalDeductions = sss + philHealth + pagIbig + tax;
+                
+                // Final Net distribution logic:
+                // Note: System currently applies all monthly statutory deductions onto the 2nd cutoff net check.
+                double secondNet = secondGross - totalDeductions;
+                double monthlyNet = firstGross + secondNet;
 
-                // Total earnings combined before government deductions
-                double totalGrossSalary = firstCutoffSalary + secondCutoffSalary;
-
-                // DEDUCTIONS BASED ON BASIC SALARY
-                // Find SSS deduction from tables using basic monthly salary
-                double sss = getSSS(basicSalary);
-                // PhilHealth deduction is 3% of basic salary, divided between the two cutoff periods
-                double phil = (basicSalary * 0.03) / 2;
-
-                // Pag-IBIG deduction rules: 1% if basic salary is under 1,500; 2% if it is over 1,500
-                double pagibig =
-                        (basicSalary <= 1500)
-                                ? basicSalary * 0.01
-                                : basicSalary * 0.02;
-
-                // Deduct basic government contributions from the gross salary to determine taxable income
-                double taxable = Math.max(0,
-                        totalGrossSalary - (sss + phil + pagibig));
-
-                // Run taxable income through tax brackets to compute standard withholding income tax
-                double tax = getTax(taxable);
-
-                // Add up all deductions together
-                double totalDeductions = sss + phil + pagibig + tax;
-
-                // Final net take-home salary applied strictly onto the second cutoff paycheck
-                double netSalarySecondCutoff = secondCutoffSalary - totalDeductions;
-
-                // ================= OUTPUT =================
-                // Print a neat, formatted payslip summary layout directly onto the software window screen
-
-                outputArea.append("\n========================================\n");
+                // Append and display the final printed breakdown details onto the on-screen report layout
+                outputArea.append("\n====================================================\n");
+                outputArea.append("MONTH: " + monthName + "\n");
+                outputArea.append("====================================================\n");
                 outputArea.append("Employee number: " + employeeId + "\n");
                 outputArea.append("Employee name: " + name + "\n");
                 outputArea.append("Birthday: " + birthday + "\n");
 
-                // Print First Cutoff Breakdown
-                outputArea.append("\nCutoff date: 1 - 15 (" + getMonthName(month) + ")\n");
-                outputArea.append("Total hours worked: " + cutoff1 + "\n");
-                outputArea.append("Late hours: " + cutoff1Late + "\n");
-                outputArea.append("Gross salary: " + firstCutoffSalary + "\n");
-                outputArea.append("Net salary: " + firstCutoffSalary + "\n"); // Gross and Net are identical here
+                outputArea.append("\nCutoff date: " + monthName + " 1 to " + monthName + " 15\n");
+                outputArea.append("Total hours worked: " + Utility.formatNumber(firstCutoffHours) + "\n");
+                outputArea.append("Late deduction hours: " + Utility.formatNumber(firstCutoffLate) + "\n");
+                outputArea.append("Gross salary: " + Utility.formatNumber(firstGross) + "\n");
+                outputArea.append("Net salary: " + Utility.formatNumber(firstGross) + "\n");
 
-                // Print Second Cutoff Breakdown (where total monthly deductions are subtracted)
-                outputArea.append("\nCutoff date: 16 - End (" + getMonthName(month) + ")\n");
-                outputArea.append("Total hours worked: " + cutoff2 + "\n");
-                outputArea.append("Late hours: " + cutoff2Late + "\n");
-                outputArea.append("Gross salary: " + secondCutoffSalary + "\n");
+                outputArea.append("\nCutoff date: " + monthName + " 16 to end of the month\n");
+                outputArea.append("Total hours worked: " + Utility.formatNumber(secondCutoffHours) + "\n");
+                outputArea.append("Late deduction hours: " + Utility.formatNumber(secondCutoffLate) + "\n");
+                outputArea.append("Gross salary: " + Utility.formatNumber(secondGross) + "\n");
 
-                // Print Individual Deductions List
-                outputArea.append("\nSSS: " + sss + "\n");
-                outputArea.append("Phil-health: " + phil + "\n");
-                outputArea.append("Pag-ibig: " + pagibig + "\n");
-                outputArea.append("Tax: " + tax + "\n");
-
-                // Print Summaries
-                outputArea.append("Total deductions: " + totalDeductions + "\n");
-                outputArea.append("Net salary: " + netSalarySecondCutoff + "\n");
-
-                outputArea.append("========================================\n");
+                outputArea.append("\nDeductions\n");
+                outputArea.append("SSS: " + Utility.formatNumber(sss) + "\n");
+                outputArea.append("PhilHealth: " + Utility.formatNumber(philHealth) + "\n");
+                outputArea.append("Pag-IBIG: " + Utility.formatNumber(pagIbig) + "\n");
+                outputArea.append("Tax: " + Utility.formatNumber(tax) + "\n");
+                outputArea.append("Total deductions: " + Utility.formatNumber(totalDeductions) + "\n");
+                outputArea.append("Net salary: " + Utility.formatNumber(secondNet) + "\n");
+                outputArea.append("Monthly net salary: " + Utility.formatNumber(monthlyNet) + "\n");
+                outputArea.append("====================================================\n");
             }
 
-            // Fallback screen printout if the employee has zero logs across June-December
+            // Print error text if loop finished without seeing a single hour entry
             if (!hasData) {
-                outputArea.append("\nNo records found (June–December only).");
+                outputArea.append("\nNo payroll records were found for employee number " + employeeId + " from June to December.\n");
+                return false;
             }
 
             return true;
-
         } catch (Exception e) {
-            // Error handling fallback block: prevents the software from completely crashing if a file goes missing
-            e.printStackTrace();
-            outputArea.append("\nERROR: " + e.getMessage());
+            outputArea.append("\nWe were unable to process the payroll report. Please verify the CSV files and try again.\n");
             return false;
         }
     }
 
-    // ================= TIME COMPUTATION =================
     /**
-     * Converts a single day's text timestamp (like "08:15" and "17:00") 
-     * into countable math hours, accounts for late penalties, and subtracts lunch.
+     * File reader engine that opens the Employee CSV spreadsheet, reads it line-by-line,
+     * strips headers, splits individual data rows, and populates a dynamic system list.
      */
-    private static double[] computeDailyWork(String in, String out) {
+    private static List<String[]> loadEmployees() throws Exception {
+        List<String[]> employees = new ArrayList<String[]>();
 
-        // Separate the time strings into hours and minutes
-        String[] i = in.split(":");
-        String[] o = out.split(":");
+        try (BufferedReader br = new BufferedReader(new FileReader(EMPLOYEE_DETAILS_FILE))) {
+            String line;
+            br.readLine(); // Discard the first header row (column descriptors)
 
-        // Convert timestamps to decimals (e.g., "8:30" becomes 8.5)
-        double start = Integer.parseInt(i[0]) + Integer.parseInt(i[1]) / 60.0;
-        double end = Integer.parseInt(o[0]) + Integer.parseInt(o[1]) / 60.0;
-
-        // Cap work boundaries: cannot start tracking before 8AM and cannot track beyond 5PM
-        start = Math.max(8.0, start);
-        end = Math.min(17.0, end);
-
-        double late = 0;
-
-        int h = Integer.parseInt(i[0]);
-        int m = Integer.parseInt(i[1]);
-
-        // LATE RULE: If you log in after 8AM, or precisely at 8AM but your minutes are at 11 or higher,
-        // you receive a fixed 0.5 hour (30 minutes) penalty value recorded.
-        if (h > 8 || (h == 8 && m >= 11)) {
-            late = 0.5;
-        }
-
-        // Subtract clock-in time from clock-out time to calculate standard hours
-        double hours = end - start;
-        hours -= 1; // Deduct exactly 1 hour automatically for the unpaid lunch break
-
-        // Return a package containing [Total hours worked today, Late deduction category value]
-        return new double[]{
-                Math.max(0, hours),
-                late
-        };
-    }
-
-    // ================= HELPERS =================
-    /**
-     * Utility tool to clean up currency formatting (removes commas and quotation marks)
-     * so that text strings can be securely processed as mathematical values.
-     */
-    private static double parseDoubleSafe(String v) {
-        try {
-            return Double.parseDouble(v.replace(",", "").replace("\"", ""));
-        } catch (Exception e) {
-            return 0; // Return zero if data is blank or completely garbled to prevent crashes
-        }
-    }
-
-    /**
-     * Converts calendar tracking numbers to real text month titles.
-     */
-    private static String getMonthName(int m) {
-        switch (m) {
-            case 6: return "June";
-            case 7: return "July";
-            case 8: return "August";
-            case 9: return "September";
-            case 10: return "October";
-            case 11: return "November";
-            case 12: return "December";
-            default: return "";
-        }
-    }
-
-    // ================= DEDUCTIONS =================
-    /**
-     * Chart indicating monthly SSS contribution values corresponding to designated basic salary ranges.
-     */
-    private static double getSSS(double salary) {
-        if (salary <= 3250) return 135;
-        if (salary <= 3750) return 157.5;
-        if (salary <= 4250) return 180;
-        if (salary <= 10000) return 450;
-        if (salary <= 20000) return 900;
-        return 1125; // Default value if the basic monthly salary is above 20,000
-    }
-
-    /**
-     * Computes progressive BIR monthly withholding tax based on Philippine tax tables.
-     */
-    private static double getTax(double income) {
-        if (income <= 20833) return 0; // Tax-exempt tier
-        if (income <= 33333) return (income - 20833) * 0.20;
-        if (income <= 66667) return 2500 + (income - 33333) * 0.25;
-        if (income <= 166667) return 10833.33 + (income - 66667) * 0.30;
-        return 40833.33 + (income - 166667) * 0.35; // Maximum progressive tax bracket
-    }
-
-    // ================= CSV PARSER =================
-    /**
-     * Specialized custom parser designed to break down a comma-separated row line into 19 individual columns.
-     * It handles quotation marks elegantly, making sure commas inside name blocks don't mess up the parsing columns.
-     */
-    public static String[] manualSplit(String line) {
-
-        String[] result = new String[19]; // Prepare an array with 19 distinct data compartments
-        String current = "";
-        int idx = 0;
-        boolean inQuotes = false;
-
-        // Loop character by character through the entire single string row line
-        for (char c : line.toCharArray()) {
-
-            if (c == '"') {
-                inQuotes = !inQuotes; // Toggle tracking status if we encounter text encapsulated inside quotes
-            } else if (c == ',' && !inQuotes) {
-                result[idx++] = current; // Save column data and jump to the next compartment when we find an open comma
-                current = "";
-            } else {
-                current += c; // Build the column value text systematically letter by letter
+            while ((line = br.readLine()) != null) {
+                if (!line.trim().isEmpty()) {
+                    // Turn raw text row into a split field list array using our custom split utility.
+                    employees.add(Utility.manualSplit(line));
+                }
             }
         }
 
-        result[idx] = current; // Save whatever remaining information is left on the tail end of the row line
-        return result;
+        return employees;
+    }
+
+    /**
+     * File reader engine that opens the Attendance Log CSV, skips the title headers,
+     * splits rows by standard comma divisions, and aggregates them into memory.
+     */
+    private static List<String[]> loadAttendance() throws Exception {
+        List<String[]> records = new ArrayList<String[]>();
+
+        try (BufferedReader br = new BufferedReader(new FileReader(ATTENDANCE_RECORD_FILE))) {
+            String line;
+            br.readLine(); // Discard the first header row (column descriptors)
+
+            while ((line = br.readLine()) != null) {
+                if (!line.trim().isEmpty()) {
+                    // Split the row by standard commas. The "-1" handles empty missing entries safely.
+                    records.add(line.split(",", -1));
+                }
+            }
+        }
+
+        return records;
     }
 }
