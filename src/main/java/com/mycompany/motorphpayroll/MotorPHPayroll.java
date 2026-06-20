@@ -1,14 +1,42 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
 package com.mycompany.motorphpayroll;
 
-
-import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.GridLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JPasswordField;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.ListSelectionModel;
+import javax.swing.SwingUtilities;
+import javax.swing.table.DefaultTableModel;
 
+/**
+ * Main user interface class of the MotorPH Payroll System.
+ * Handles login, employee services, payroll processing,
+ * and employee record management.
+ */
 public class MotorPHPayroll {
 
+   
     static JFrame loginFrame;
     static JFrame employeeFrame;
     static JFrame payrollFrame;
@@ -33,6 +61,10 @@ public class MotorPHPayroll {
     static final Font FIELD_FONT = new Font("Arial", Font.PLAIN, 15);
     static final Font OUTPUT_FONT = new Font("Monospaced", Font.PLAIN, 14);
 
+    /**
+ * Entry point of the application.
+ * Launches the login page on the Swing Event Dispatch Thread.
+ */
     public static void main(String[] args) {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
@@ -41,6 +73,11 @@ public class MotorPHPayroll {
         });
     }
 
+     /**
+ * Creates and displays the login window.
+ * Validates employee and payroll staff credentials
+ * before granting access to the system.
+ */
     public static void showLoginPage() {
         loginFrame = new JFrame("MotorPH Login");
         loginFrame.setSize(760, 420);
@@ -140,7 +177,13 @@ public class MotorPHPayroll {
         loginFrame.add(mainPanel);
         loginFrame.setVisible(true);
     }
-
+/**
+ * Checks whether the entered employee number
+ * exists in the employee records.
+ *
+ * @param username Employee number entered by the user
+ * @return true if employee exists; otherwise false
+ */
     private static boolean isEmployeeLogin(String username) {
         if (username == null || username.trim().isEmpty()) {
             return false;
@@ -148,11 +191,21 @@ public class MotorPHPayroll {
 
         return EmployeeService.findEmployee(username.trim()) != null;
     }
-
+/**
+ * Retrieves and returns the employee number
+ * used during login.
+ *
+ * @param username Employee login identifier
+ * @return Employee number
+ */
     private static String getEmployeeNumberFromLogin(String username) {
         return username.trim();
     }
-
+/**
+ * Displays the Employee Self-Service Portal.
+ * Allows employees to view personal information
+ * and generate individual payslips.
+ */
     public static void showEmployeePage() {
         employeeFrame = new JFrame("Employee Portal");
         employeeFrame.setSize(950, 700);
@@ -236,7 +289,11 @@ public class MotorPHPayroll {
         employeeFrame.add(mainPanel);
         employeeFrame.setVisible(true);
     }
-
+/**
+ * Displays the Payroll Staff Portal.
+ * Allows payroll staff to process payroll,
+ * generate summaries, and manage employee records.
+ */
     public static void showPayrollPage() {
         payrollFrame = new JFrame("Payroll Staff Portal");
         payrollFrame.setSize(1160, 780);
@@ -351,7 +408,11 @@ public class MotorPHPayroll {
         payrollFrame.add(mainPanel);
         payrollFrame.setVisible(true);
     }
-
+/**
+ * Displays the Employee Record Management window.
+ * Allows payroll staff to add, update, delete,
+ * search, and view employee records.
+ */
     public static void showEmployeeRecordsPage() {
         final JFrame recordsFrame = new JFrame("Employee Record Management");
         recordsFrame.setSize(1500, 850);
@@ -529,7 +590,12 @@ public class MotorPHPayroll {
         recordsFrame.add(mainPanel);
         recordsFrame.setVisible(true);
     }
-
+/**
+ * Creates the employee information input form.
+ *
+ * @return JPanel containing all employee fields
+ */
+    
     private static JPanel createEmployeeFormPanel() {
         JPanel formPanel = new JPanel(new GridBagLayout());
         formPanel.setBorder(BorderFactory.createTitledBorder("Employee Information Form"));
@@ -562,7 +628,10 @@ public class MotorPHPayroll {
 
         return formPanel;
     }
-
+/**
+ * Loads the selected employee record from the table
+ * into the input form for viewing or editing.
+ */
     private static void loadSelectedEmployeeToForm() {
         int selectedRow = employeeTable.getSelectedRow();
 
@@ -586,7 +655,11 @@ public class MotorPHPayroll {
             formFields[index].setText(employee[index]);
         }
     }
-
+/**
+ * Retrieves all values entered in the employee form.
+ *
+ * @return Array containing employee information
+ */
     private static String[] getFormValues() {
         String[] values = new String[EmployeeService.EMPLOYEE_COLUMNS.length];
 
@@ -596,13 +669,22 @@ public class MotorPHPayroll {
 
         return values;
     }
-
+/**
+ * Clears all employee input fields in the form.
+ */
     private static void clearForm() {
         for (int index = 0; index < formFields.length; index++) {
             formFields[index].setText("");
         }
     }
-
+/**
+ * Formats employee information into a readable
+ * text display.
+ *
+ * @param employee Employee data array
+ * @return Formatted employee details
+ */
+    
     private static String buildEmployeeDetails(String[] employee) {
         StringBuilder details = new StringBuilder();
 
@@ -615,56 +697,72 @@ public class MotorPHPayroll {
 
         return details.toString();
     }
-
+/**
+ * Creates a formatted label for the login page.
+ */
     private static JLabel createLoginLabel(String text) {
         JLabel label = new JLabel(text);
         label.setFont(LABEL_FONT);
         label.setPreferredSize(new Dimension(270, 36));
         return label;
     }
-
+/**
+ * Creates a formatted text field for login input.
+ */
     private static JTextField createLoginTextField(int columns) {
         JTextField field = new JTextField(columns);
         field.setFont(FIELD_FONT);
         field.setPreferredSize(new Dimension(320, 36));
         return field;
     }
-
+/**
+ * Creates a password field for secure password entry.
+ */
     private static JPasswordField createLoginPasswordField(int columns) {
         JPasswordField field = new JPasswordField(columns);
         field.setFont(FIELD_FONT);
         field.setPreferredSize(new Dimension(320, 36));
         return field;
     }
-
+/**
+ * Creates a standard form label.
+ */
     private static JLabel createLabel(String text) {
         JLabel label = new JLabel(text);
         label.setFont(LABEL_FONT);
         label.setPreferredSize(new Dimension(165, 32));
         return label;
     }
-
+/**
+ * Creates a compact label used in employee forms.
+ */
     private static JLabel createSmallLabel(String text) {
         JLabel label = new JLabel(text);
         label.setFont(new Font("Arial", Font.PLAIN, 12));
         label.setPreferredSize(new Dimension(150, 27));
         return label;
     }
-
+/**
+ * Creates a standard text field component.
+ */
     private static JTextField createTextField(int columns) {
         JTextField field = new JTextField(columns);
         field.setFont(FIELD_FONT);
         field.setPreferredSize(new Dimension(280, 34));
         return field;
     }
-
+/**
+ * Creates a compact text field for employee forms.
+ */
     private static JTextField createSmallTextField(int columns) {
         JTextField field = new JTextField(columns);
         field.setFont(new Font("Arial", Font.PLAIN, 12));
         field.setPreferredSize(new Dimension(200, 27));
         return field;
     }
-
+/**
+ * Creates a formatted button with a specified size.
+ */
     private static JButton createButton(String text, int width, int height) {
         JButton button = new JButton(text);
         button.setFont(BUTTON_FONT);
@@ -672,7 +770,9 @@ public class MotorPHPayroll {
         button.setMinimumSize(new Dimension(width, height));
         return button;
     }
-
+/**
+ * Adds a label and input field to a form row.
+ */
     private static void addFormRow(JPanel panel, GridBagConstraints gbc, int row,
                                    JLabel label, JTextField field) {
         gbc.gridx = 0;
@@ -685,7 +785,9 @@ public class MotorPHPayroll {
         gbc.fill = GridBagConstraints.NONE;
         panel.add(field, gbc);
     }
-
+/**
+ * Adds a button to a specified grid position.
+ */
     private static void addButtonToGrid(JPanel panel, GridBagConstraints gbc,
                                         JButton button, int column, int row) {
         gbc.gridx = column;
