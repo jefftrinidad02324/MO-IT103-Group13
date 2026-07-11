@@ -1,160 +1,155 @@
 package com.mycompany.motorphpayroll;
 
-/**
- * This is a Utility helper class designed for a payroll system.
- * It contains standard tools to handle text data, calculate working hours,
- * look up months, and figure out government deductions like SSS and taxes.
- */
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+/** Procedural reusable helper functions for CSV, validation, time, and payroll. */
 public class Utility {
 
-    // Defines the standard company working hours: 8:00 AM (8.0) to 5:00 PM (17.0).
     public static final double START_WORK = 8.0;
     public static final double END_WORK = 17.0;
 
-    /**
-     * Splits a row of text (like a line from a CSV spreadsheet) into 19 separate pieces of data.
-     * It safely ignores commas if they are hidden inside quotation marks (e.g., "Smith, John").
-     */
     public static String[] manualSplit(String line) {
         String[] values = new String[19];
-        String current = "";
+        StringBuilder current = new StringBuilder();
         int index = 0;
         boolean insideQuotes = false;
 
-        // If there is no line to read, fill all 19 positions with empty text and stop.
         if (line == null) {
-            for (int i = 0; i < values.length; i++) {
-                values[i] = "";
-            }
+            fillMissing(values);
             return values;
         }
 
-        // Read the line character by character to split it by commas.
         for (int i = 0; i < line.length(); i++) {
-            char currentChar = line.charAt(i);
-
-            if (currentChar == '"') {
-                // If we see a quotation mark, toggle whether we are inside or outside quotes.
-                insideQuotes = !insideQuotes;
-            } else if (currentChar == ',' && !insideQuotes) {
-                // If we hit a comma and we are NOT inside quotes, save the word we built and move to the next slot.
-                if (index < values.length) {
-                    values[index] = current;
-                    index++;
+            char ch = line.charAt(i);
+            if (ch == '"') {
+                if (insideQuotes && i + 1 < line.length() && line.charAt(i + 1) == '"') {
+                    current.append('"');
+                    i++;
+                } else {
+                    insideQuotes = !insideQuotes;
                 }
-                current = ""; // Reset the temporary word builder
+            } else if (ch == ',' && !insideQuotes) {
+                if (index < values.length) {
+                    values[index++] = current.toString();
+                }
+                current.setLength(0);
             } else {
-                // Otherwise, keep adding characters to the current word.
-                current += currentChar;
+                current.append(ch);
             }
         }
-
-        // Save the very last word of the line into the remaining slot.
         if (index < values.length) {
-            values[index] = current;
+            values[index] = current.toString();
         }
+        fillMissing(values);
+        return values;
+    }
 
-        // Replace any missing/null slots with completely empty text to avoid system errors.
+    private static void fillMissing(String[] values) {
         for (int i = 0; i < values.length; i++) {
             if (values[i] == null) {
                 values[i] = "";
             }
         }
-
-        return values;
     }
 
-    /**
-     * Calculates the actual number of hours worked and determines if there is a deduction for being late.
-     * Takes time inputs in a 24-hour format (e.g., "08:30" and "17:00").
-     */
     public static double[] computeHours(String timeIn, String timeOut) {
-        // Separate the hours and minutes using the colon character.
-        String[] inParts = timeIn.split(":");
-        String[] outParts = timeOut.split(":");
-
-        // Convert the times into decimal numbers (e.g., 8:30 becomes 8.5).
-        double start = Integer.parseInt(inParts[0]) + Integer.parseInt(inParts[1]) / 60.0;
-        double end = Integer.parseInt(outParts[0]) + Integer.parseInt(outParts[1]) / 60.0;
-
-        int hour = Integer.parseInt(inParts[0]);
-        int minute = Integer.parseInt(inParts[1]);
-
-        // If an employee arrives after 8:00 AM, or specifically at 8:11 AM or later, apply a 0.5-hour late deduction.
-        double lateDeduction = 0;
-        if (hour > 8 || (hour == 8 && minute >= 11)) {
-            lateDeduction = 0.5;
+        if (!isValidTime(timeIn) || !isValidTime(timeOut)) {
+            return new double[]{0, 0};
         }
 
-        // Ensure calculations don't start before official hours (8 AM) or end after official hours (5 PM).
+        String[] inParts = timeIn.trim().split(":");
+        String[] outParts = timeOut.trim().split(":");
+        int inHour = Integer.parseInt(inParts[0]);
+        int inMinute = Integer.parseInt(inParts[1]);
+        int outHour = Integer.parseInt(outParts[0]);
+        int outMinute = Integer.parseInt(outParts[1]);
+
+        double start = inHour + inMinute / 60.0;
+        double end = outHour + outMinute / 60.0;
+        double lateDeduction = (inHour > 8 || (inHour == 8 && inMinute >= 11)) ? 0.5 : 0;
+
         start = Math.max(START_WORK, start);
         end = Math.min(END_WORK, end);
-
-        // Calculate hours worked by subtracting start from end time, minus a 1-hour unpaid lunch break.
         double workedHours = Math.max(0, end - start - 1);
-        // Apply the late arrival penalty, if any.
-        workedHours = Math.max(0, workedHours - lateDeduction);
-
-        // Returns two answers: [Hours Worked, Late Deduction Amount]
         return new double[]{workedHours, lateDeduction};
     }
 
-    /**
-     * Safely converts text into a decimal number.
-     * It clears out formatting symbols like commas and quotes, and returns 0 if the text isn't a valid number.
-     */
+    public static boolean isValidTime(String value) {
+        if (value == null || !value.trim().matches("(?:[0-9]|1[0-9]|2[0-3]):[0-5]\\d")) {
+            return false;
+        }
+        return true;
+    }
+
+    public static boolean isValidDate(String value) {
+        if (value == null || !value.trim().matches("\\d{2}/\\d{2}/\\d{4}")) {
+            return false;
+        }
+        SimpleDateFormat format = new SimpleDateFormat("MM/dd/yyyy");
+        format.setLenient(false);
+        try {
+            Date date = format.parse(value.trim());
+            return date.before(new Date());
+        } catch (ParseException e) {
+            return false;
+        }
+    }
+
+    public static boolean isValidPhone(String value) {
+        return value != null && value.trim().matches("\\+?\\d{10,13}");
+    }
+
+    public static boolean isValidSSS(String value) {
+        return value != null && value.trim().matches("\\d{2}-\\d{7}-\\d");
+    }
+
+    public static boolean isValidPhilHealth(String value) {
+        return value != null && value.trim().matches("\\d{2}-\\d{9}-\\d");
+    }
+
+    public static boolean isValidTIN(String value) {
+        return value != null && value.trim().matches("\\d{3}-\\d{3}-\\d{3}(?:-\\d{3})?");
+    }
+
+    public static boolean isValidPagIbig(String value) {
+        return value != null && value.trim().matches("\\d{4}-\\d{4}-\\d{4}");
+    }
+
     public static double parseDoubleSafe(String value) {
         try {
             if (value == null) {
                 return 0;
             }
-            // Strip out commas and quotation marks, clean up spaces, and convert to a decimal number.
             return Double.parseDouble(value.replace(",", "").replace("\"", "").trim());
-        } catch (Exception e) {
-            // If anything goes wrong (like trying to convert "hello" to a number), safely return 0.
+        } catch (NumberFormatException e) {
             return 0;
         }
     }
 
-    /**
-     * Checks if a piece of text can be successfully converted into a valid number.
-     * Returns true if it is a number, and false if it is not.
-     */
     public static boolean isNumeric(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return false;
+        }
         try {
-            // Attempt to clean and convert the text to a decimal number.
             Double.parseDouble(value.replace(",", "").replace("\"", "").trim());
-            return true; // Conversion succeeded
-        } catch (Exception e) {
-            return false; // Conversion failed
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
         }
     }
 
-    /**
-     * Converts a month's number (1 through 12) into its actual written word name.
-     */
+    public static boolean isNonNegativeNumber(String value) {
+        return isNumeric(value) && parseDoubleSafe(value) >= 0;
+    }
+
     public static String getMonthName(int month) {
-        switch (month) {
-            case 1: return "January";
-            case 2: return "February";
-            case 3: return "March";
-            case 4: return "April";
-            case 5: return "May";
-            case 6: return "June";
-            case 7: return "July";
-            case 8: return "August";
-            case 9: return "September";
-            case 10: return "October";
-            case 11: return "November";
-            case 12: return "December";
-            default: return ""; // Returns nothing if the number is invalid (e.g., 15)
-        }
+        String[] months = {"", "January", "February", "March", "April", "May",
+                "June", "July", "August", "September", "October", "November", "December"};
+        return month >= 1 && month <= 12 ? months[month] : "";
     }
 
-    /**
-     * Looks up the standard Philippine SSS (Social Security System) contribution bracket
-     * based on the employee's monthly gross salary.
-     */
     public static double getSSS(double salary) {
         if (salary <= 3250) return 135;
         if (salary <= 3750) return 157.5;
@@ -200,25 +195,18 @@ public class Utility {
         if (salary <= 23750) return 1057.5;
         if (salary <= 24250) return 1080;
         if (salary <= 24750) return 1102.5;
-        return 1125; // Maximum SSS contribution amount for salaries above 24,750
+        return 1125;
     }
 
-    /**
-     * Calculates the progressive withholding tax deduction based on the employee's taxable income bracket
-     * (Following the Philippine TRAIN Law tax table format).
-     */
     public static double getTax(double income) {
-        if (income <= 20833) return 0; // Income below 20,833 is tax-exempt
+        if (income <= 20833) return 0;
         if (income <= 33333) return (income - 20833) * 0.20;
         if (income <= 66667) return 2500 + (income - 33333) * 0.25;
         if (income <= 166667) return 10833.33 + (income - 66667) * 0.30;
         if (income <= 666667) return 40833.33 + (income - 166667) * 0.32;
-        return 200833.33 + (income - 666667) * 0.35; // Maximum tax rate bracket
+        return 200833.33 + (income - 666667) * 0.35;
     }
 
-    /**
-     * Converts a decimal number into plain text format so it can be safely displayed on screen.
-     */
     public static String formatNumber(double value) {
         return String.valueOf(value);
     }

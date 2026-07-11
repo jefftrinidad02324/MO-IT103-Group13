@@ -30,9 +30,9 @@ import javax.swing.SwingUtilities;
 import javax.swing.table.DefaultTableModel;
 
 /**
- * Main user interface class of the MotorPH Payroll System.
- * Handles login, employee services, payroll processing,
- * and employee record management.
+ * Procedural main user-interface module of the MotorPH Payroll System.
+ * The application uses static fields and static methods only.
+ * Business data remains in arrays and CSV files; no custom employee objects are created.
  */
 public class MotorPHPayroll {
 
@@ -598,7 +598,8 @@ public class MotorPHPayroll {
     
     private static JPanel createEmployeeFormPanel() {
         JPanel formPanel = new JPanel(new GridBagLayout());
-        formPanel.setBorder(BorderFactory.createTitledBorder("Employee Information Form"));
+        formPanel.setBorder(BorderFactory.createTitledBorder(
+                "Employee Information Form - Birthday: MM/dd/yyyy; use required government ID formats"));
 
         String[] labels = EmployeeService.EMPLOYEE_COLUMNS;
         formFields = new JTextField[labels.length];
@@ -625,6 +626,19 @@ public class MotorPHPayroll {
             gbc.fill = GridBagConstraints.NONE;
             formPanel.add(formFields[index], gbc);
         }
+
+        // Mentor feedback: employee numbers are assigned automatically in sequence.
+        formFields[0].setText(EmployeeService.getNextEmployeeNumber());
+        formFields[0].setEditable(false);
+        formFields[0].setToolTipText("Automatically assigned by the system.");
+
+        // Mentor feedback: enforce a clear, validated birthdate format.
+        formFields[3].setToolTipText("Required format: MM/dd/yyyy (example: 03/25/1990)");
+        formFields[5].setToolTipText("10 to 13 digits; a leading + is allowed.");
+        formFields[6].setToolTipText("Required format: 00-0000000-0");
+        formFields[7].setToolTipText("Required format: 00-000000000-0");
+        formFields[8].setToolTipText("Required format: 000-000-000 or 000-000-000-000");
+        formFields[9].setToolTipText("Required format: 0000-0000-0000");
 
         return formPanel;
     }
@@ -654,6 +668,7 @@ public class MotorPHPayroll {
         for (int index = 0; index < formFields.length; index++) {
             formFields[index].setText(employee[index]);
         }
+        formFields[0].setEditable(false);
     }
 /**
  * Retrieves all values entered in the employee form.
@@ -676,6 +691,8 @@ public class MotorPHPayroll {
         for (int index = 0; index < formFields.length; index++) {
             formFields[index].setText("");
         }
+        formFields[0].setText(EmployeeService.getNextEmployeeNumber());
+        formFields[0].setEditable(false);
     }
 /**
  * Formats employee information into a readable
