@@ -8,7 +8,6 @@ import java.util.List;
 
 /**
  * Procedural employee-record module.
- * All operations are static methods; no employee objects are created.
  */
 public class EmployeeService {
 

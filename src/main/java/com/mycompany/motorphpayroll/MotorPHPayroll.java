@@ -32,7 +32,6 @@ import javax.swing.table.DefaultTableModel;
 /**
  * Procedural main user-interface module of the MotorPH Payroll System.
  * The application uses static fields and static methods only.
- * Business data remains in arrays and CSV files; no custom employee objects are created.
  */
 public class MotorPHPayroll {
 
