@@ -20,11 +20,11 @@
 
 # Team Members
 
-  ##Jeff Trinidad         
-  ##Aileen Rodriguez        
-  ##Jenise Marienne Burce  
-  ##Lovely Rose Yu    
-  ##Patricia Kaye Red      
+  Jeff Trinidad         
+  Aileen Rodriguez        
+  Jenise Marienne Burce  
+  Lovely Rose Yu    
+  Patricia Kaye Red      
 
 ------------------------------------------------------------------------
 
