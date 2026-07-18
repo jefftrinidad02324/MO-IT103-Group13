@@ -12,8 +12,7 @@
 **Project:** MotorPH Payroll System\
 **Programming Language:** Java\
 **Development Environment:** Apache NetBeans IDE\
-**Programming Paradigm:** Procedural Programming (No Object-Oriented
-Programming)
+
 
 # 
 
