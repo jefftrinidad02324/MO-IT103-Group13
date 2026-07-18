@@ -1,96 +1,77 @@
-# MO-IT103-Group13
+# MotorPH Payroll System
 
-## Milestone 1: MotorPH Employee App GUI Development and Interface Refinement
+## MO-IT103 -- Computer Programming 2
 
-## Main Objective
+### Terminal Assessment Project
 
-The main objective of this milestone is to finalize and refine the graphical user interface (GUI) of the MotorPH Employee App using **Java Swing**.
+------------------------------------------------------------------------
 
-This milestone focuses on improving the application's **user interface design (UI)** and **user experience (UX)** by ensuring that the system:
+# Group Information
 
-- Displays properly labeled input fields
-- Uses clear and organized layout design
-- Responds immediately to user interactions
-- Validates all user inputs
-- Displays clear confirmation and error messages
-- Demonstrates proper event-driven programming
-- Maintains structural consistency with previous project requirements
+**Course:** MO-IT103 -- Computer Programming 2\
+**Project:** MotorPH Payroll System\
+**Programming Language:** Java\
+**Development Environment:** Apache NetBeans IDE\
+**Programming Paradigm:** Procedural Programming (No Object-Oriented
+Programming)
 
-The application must provide a smooth, user-friendly, and reliable interface for both employees and payroll staff.
+# 
 
----
+------------------------------------------------------------------------
 
-## Required Features
+# Team Members
 
-The MotorPH Employee App must:
+  Name                        MMDC Email
+  --------------------------- --------------------------------
+  **Jeff Trinidad**           lr.jeftrinidad@mmdc.mcl.edu.ph
+  **Aileen Rodriguez**        lr.arodriguez@mmdc.mcl.edu.ph
+  **Jenise Marienne Burce**   lr.jmburce@mmdc.mcl.edu.ph
+  **Lovely Rose Yu**          lr.lryu@mmdc.mcl.edu.ph
+  **Patricia Kaye Red**       lr.pkred@mmdc.mcl.edu.ph
 
-- Display labeled fields for:
-  - Employee Number
-  - Employee Name
-  - Pay Coverage
+------------------------------------------------------------------------
 
-- Provide responsive buttons and user interaction
+# Conclusion
 
-- Validate invalid or missing user inputs
+The **MotorPH Payroll System** is a comprehensive desktop payroll
+management application developed as the final project for **MO-IT103 --
+Computer Programming 2**. The system demonstrates how procedural
+programming can be applied to solve real-world payroll management
+challenges through a reliable, modular, and easy-to-use desktop
+application.
 
-- Display clear feedback and system messages
+The application automates employee record management, attendance
+processing, payroll computation, statutory deductions, and payroll
+reporting using CSV files as its data source. By replacing manual
+payroll computation with an automated process, the system improves
+accuracy, consistency, and efficiency while reducing the possibility of
+human error.
 
-- Maintain consistency in interface layout and navigation
+The graphical user interface was designed to be simple enough for users
+with little or no technical background. Employees can securely access
+their personal information and payslips, while payroll staff can process
+payroll, generate payroll summaries, and manage employee records using
+clearly labeled menus and guided workflows. Validation messages and
+prompts help users understand errors and complete each task correctly
+without requiring programming knowledge.
 
----
+From a software development perspective, the project demonstrates the
+practical application of modular procedural programming, Java Swing
+interface development, file handling, input validation, payroll
+computation, and reusable utility functions. Each module has a dedicated
+responsibility, making the application easier to maintain, understand,
+test, and extend.
 
-## Project Scope
+Although this version uses CSV files instead of a relational database,
+the overall architecture provides an excellent foundation for future
+enhancements such as MySQL integration, cloud-based storage, PDF payslip
+generation, advanced reporting, multi-user authentication, role-based
+access control, audit trails, backup and recovery, and dashboard
+analytics.
 
-This milestone includes:
-
-### Employee Portal
-- Employee login access
-- Viewing employee information
-- User-friendly interface display
-
-### Payroll Staff Portal
-- Payroll staff login access
-- Payroll processing interface
-- Salary report generation display
-
-### GUI Refinement
-- Improved layout alignment
-- Better component organization
-- Enhanced usability and readability
-
----
-
-## Technologies Used
-
-- **Java**
-- **Java Swing**
-- **CSV File Handling**
-- **Event-Driven Programming**
-
----
-
-## Group Members
-
-1. **Jeff Trinidad**  
-   lr.jeftrinidad@mmdc.mcl.edu.ph
-
-2. **Aileen Rodriguez**  
-   lr.arodriguez@mmdc.mcl.edu.ph
-
-3. **Jenise Marienne Burce**  
-   lr.jmburce@mmdc.mcl.edu.ph
-
-4. **Lovely Rose Yu**  
-   lr.lryu@mmdc.mcl.edu.ph
-
-5. **Patricia Kaye Red**  
-   lr.pkred@mmdc.mcl.edu.ph
-
----
-
-## Course Information
-
-**Course:** MO-IT103 – Computer Programming 2  
-**Project:** MotorPH Employee App  
-**Milestone:** Milestone 1  
-**Focus:** GUI Development and Interface Refinement
+Overall, the MotorPH Payroll System successfully achieves the objectives
+of the MO-IT103 Terminal Assessment by delivering a practical,
+maintainable, and user-friendly payroll solution. It demonstrates
+professional software development practices while providing a useful
+business application that can be operated confidently by both employees
+and payroll administrators.
