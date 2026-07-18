@@ -14,19 +14,17 @@
 **Development Environment:** Apache NetBeans IDE\
 
 
-# 
+
 
 ------------------------------------------------------------------------
 
 # Team Members
 
-  Name                        MMDC Email
-  --------------------------- --------------------------------
-  **Jeff Trinidad**           lr.jeftrinidad@mmdc.mcl.edu.ph
-  **Aileen Rodriguez**        lr.arodriguez@mmdc.mcl.edu.ph
-  **Jenise Marienne Burce**   lr.jmburce@mmdc.mcl.edu.ph
-  **Lovely Rose Yu**          lr.lryu@mmdc.mcl.edu.ph
-  **Patricia Kaye Red**       lr.pkred@mmdc.mcl.edu.ph
+  ##Jeff Trinidad         
+  ##Aileen Rodriguez        
+  ##Jenise Marienne Burce  
+  ##Lovely Rose Yu    
+  ##Patricia Kaye Red      
 
 ------------------------------------------------------------------------
 
