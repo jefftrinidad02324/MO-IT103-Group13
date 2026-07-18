@@ -11,7 +11,7 @@
 **Course:** MO-IT103 -- Computer Programming 2\
 **Project:** MotorPH Payroll System\
 **Programming Language:** Java\
-**Development Environment:** Apache NetBeans IDE\
+**Development Environment:** Apache NetBeans IDE
 
 
 
