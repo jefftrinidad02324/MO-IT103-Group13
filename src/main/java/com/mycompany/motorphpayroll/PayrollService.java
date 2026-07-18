@@ -6,20 +6,37 @@ import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Procedural payroll module using static methods and arrays only. */
+/**
+ * Handles all payroll-related tasks such as calculating salaries,
+ * reading employee and attendance records, and generating payroll reports.
+ */
 public class PayrollService {
 
+    // Location of the employee information file.
     private static final String EMPLOYEE_DETAILS_FILE =
             "src/main/java/com/mycompany/motorphpayroll/Employee Details.csv";
+
+    // Location of the employee attendance file.
     private static final String ATTENDANCE_RECORD_FILE =
             "src/main/java/com/mycompany/motorphpayroll/Employee Attendance Record.csv";
 
+    /**
+     * Processes the payroll of a single employee based on the entered employee number.
+     * It checks if the employee exists, calculates the payroll,
+     * and displays the payroll report.
+     */
     public static void processOne(String employeeId, JTextField nameField, JTextArea outputArea) {
+
+        // Clear any previous payroll results before starting.
         outputArea.setText("");
+
+        // Check if the employee number was entered.
         if (employeeId == null || employeeId.trim().isEmpty()) {
             outputArea.setText("Please enter an employee number before processing payroll.");
             return;
         }
+
+        // Verify that the employee number follows the valid MotorPH numbering.
         if (!EmployeeService.isEmployeeNumberInSeries(employeeId)) {
             if (nameField != null) nameField.setText("");
             outputArea.setText("Invalid employee number. Please enter a valid number starting from 10001.");
@@ -27,7 +44,10 @@ public class PayrollService {
         }
 
         try {
+            // Load all attendance records from the CSV file.
             List<String[]> records = loadAttendance();
+
+            // Calculate and display the employee's payroll.
             if (calculate(employeeId.trim(), nameField, outputArea, records)) {
                 JOptionPane.showMessageDialog(null,
                         "Payroll report has been generated successfully.");
@@ -37,19 +57,34 @@ public class PayrollService {
         }
     }
 
+    /**
+     * Processes the payroll of every employee listed in the employee file.
+     * A summary is displayed after all employees have been processed.
+     */
     public static void processAll(JTextArea outputArea) {
+
+        // Clear any previous payroll results before starting.
         outputArea.setText("");
+
         int processedCount = 0;
+
         try {
+            // Load all employee records.
             List<String[]> employees = loadEmployees();
+
+            // Load all attendance records.
             List<String[]> records = loadAttendance();
+
             if (employees.isEmpty()) {
                 outputArea.setText("No employee records are available for payroll processing.");
                 return;
             }
 
+            // Process each employee one at a time.
             for (int i = 0; i < employees.size(); i++) {
                 String id = employees.get(i)[0].trim();
+
+                // Count successfully processed payroll records.
                 if (EmployeeService.isEmployeeNumberInSeries(id) &&
                         calculate(id, null, outputArea, records)) {
                     processedCount++;
@@ -60,19 +95,30 @@ public class PayrollService {
             outputArea.append("ALL PAYROLL PROCESSING COMPLETE\n");
             outputArea.append("Employees processed: " + processedCount + "\n");
             outputArea.append("====================================================\n");
+
             JOptionPane.showMessageDialog(null,
                     "Payroll processing completed for " + processedCount + " employee(s).");
+
         } catch (Exception e) {
             outputArea.setText("All payroll reports could not be processed. Please verify the CSV files.");
         }
     }
 
-    /** Feature 5: employee count, total gross, total deductions, and average net pay. */
+    /**
+     * Generates a payroll summary showing:
+     * - Total number of employees
+     * - Employees with payroll records
+     * - Total gross pay
+     * - Total deductions
+     * - Average net pay
+     */
     public static String generateSummary() {
         StringBuilder summary = new StringBuilder();
+
         try {
             List<String[]> employees = loadEmployees();
             List<String[]> records = loadAttendance();
+
             if (employees.isEmpty()) {
                 return "No employee records are loaded. The payroll summary cannot be generated.";
             }
@@ -82,24 +128,32 @@ public class PayrollService {
             double totalDeductions = 0;
             double totalNet = 0;
 
+            // Calculate payroll information for each employee.
             for (int i = 0; i < employees.size(); i++) {
                 String[] employee = employees.get(i);
                 String employeeId = employee[0].trim();
+
                 if (!EmployeeService.isEmployeeNumberInSeries(employeeId)) continue;
 
                 double basicSalary = Utility.parseDoubleSafe(employee[13]);
                 double hourlyRate = Utility.parseDoubleSafe(employee[18]);
+
                 double employeeGross = 0;
                 double employeeDeductions = 0;
                 double employeeNet = 0;
                 boolean hasPayroll = false;
 
+                // Calculate payroll information for each month from June to December.
                 for (int month = 6; month <= 12; month++) {
+
                     double[] cutoffHours = getMonthlyHours(employeeId, month, records);
                     double gross = (cutoffHours[0] + cutoffHours[1]) * hourlyRate;
+
+                    // Skip months without attendance records.
                     if (gross <= 0) continue;
 
                     double deductions = computeTotalDeductions(basicSalary, gross);
+
                     employeeGross += gross;
                     employeeDeductions += deductions;
                     employeeNet += gross - deductions;
@@ -119,6 +173,7 @@ public class PayrollService {
             }
 
             double averageNetPay = totalNet / employeesWithPayroll;
+
             summary.append("PAYROLL SUMMARY REPORT\n");
             summary.append("====================================================\n");
             summary.append("Payroll coverage: June to December\n");
@@ -129,15 +184,25 @@ public class PayrollService {
             summary.append("Average net pay: ").append(Utility.formatNumber(averageNetPay)).append("\n");
             summary.append("====================================================\n");
             summary.append("Summary generated successfully.\n");
+
         } catch (Exception e) {
             summary.append("The payroll summary could not be generated. Please verify the CSV files.");
         }
+
         return summary.toString();
     }
 
+    /**
+     * Calculates the payroll details of a specific employee.
+     * It computes worked hours, late deductions, gross salary,
+     * government deductions, taxes, and net salary for each month.
+     * The results are displayed in the payroll report.
+     */
     private static boolean calculate(String employeeId, JTextField nameField,
                                      JTextArea outputArea, List<String[]> records) {
+
         String[] employee = EmployeeService.findEmployee(employeeId);
+
         if (employee == null) {
             outputArea.append("\nEmployee number " + employeeId + " was not found.\n");
             return false;
@@ -145,31 +210,45 @@ public class PayrollService {
 
         String name = employee[2].trim() + " " + employee[1].trim();
         String birthday = employee[3].trim();
+
         double basicSalary = Utility.parseDoubleSafe(employee[13]);
         double hourlyRate = Utility.parseDoubleSafe(employee[18]);
+
         if (hourlyRate <= 0 || basicSalary <= 0) {
             outputArea.append("\nEmployee " + employeeId + " has invalid salary data.\n");
             return false;
         }
+
         if (nameField != null) nameField.setText(name);
 
         boolean hasData = false;
+
+        // Calculate payroll information for each month from June to December.
         for (int month = 6; month <= 12; month++) {
+
             double[] hours = getMonthlyHours(employeeId, month, records);
+
             double firstHours = hours[0];
             double secondHours = hours[1];
             double firstLate = hours[2];
             double secondLate = hours[3];
+
+            // Skip months without attendance records.
             if (firstHours == 0 && secondHours == 0) continue;
 
             hasData = true;
+
             String monthName = Utility.getMonthName(month);
+
+            // Compute salary based on payable working hours.
             double firstPayableHours = Math.max(0, firstHours - firstLate);
             double secondPayableHours = Math.max(0, secondHours - secondLate);
+
             double firstGross = firstPayableHours * hourlyRate;
             double secondGross = secondPayableHours * hourlyRate;
             double totalGross = firstGross + secondGross;
 
+            // Calculate all required government deductions and tax.
             double sss = Utility.getSSS(basicSalary);
             double philHealth = (basicSalary * 0.03) / 2;
             double pagIbig = basicSalary <= 1500 ? basicSalary * 0.01 : basicSalary * 0.02;
@@ -179,6 +258,7 @@ public class PayrollService {
             double secondNet = secondGross - totalDeductions;
             double monthlyNet = firstGross + secondNet;
 
+            // Display the payroll breakdown for the current month.
             outputArea.append("\n====================================================\n");
             outputArea.append("MONTH: " + monthName.toUpperCase() + "\n");
             outputArea.append("Employee number: " + employeeId + "\n");
@@ -209,12 +289,24 @@ public class PayrollService {
             outputArea.append("\nNo payroll records were found for employee " + employeeId +
                     " from June to December.\n");
         }
+
         return hasData;
     }
 
-    /** [first hours, second hours, first late deductions, second late deductions]. */
+    /**
+     * Collects an employee's attendance information for a specific month.
+     * It separates:
+     * - Hours worked during the first payroll cutoff
+     * - Hours worked during the second payroll cutoff
+     * - Late deduction hours for both cutoffs
+     *
+     * Returns the values in this order:
+     * [First Cutoff Hours, Second Cutoff Hours,
+     *  First Cutoff Late Hours, Second Cutoff Late Hours]
+     */
     private static double[] getMonthlyHours(String employeeId, int month,
                                             List<String[]> records) {
+
         double firstHours = 0;
         double secondHours = 0;
         double firstLate = 0;
@@ -222,22 +314,28 @@ public class PayrollService {
 
         for (int i = 0; i < records.size(); i++) {
             String[] record = records.get(i);
+
             if (record.length < 6 || !record[0].trim().equals(employeeId)) continue;
 
             String[] dateParts = record[3].trim().split("/");
+
             if (dateParts.length != 3) continue;
+
             int recordMonth;
             int day;
+
             try {
                 recordMonth = Integer.parseInt(dateParts[0]);
                 day = Integer.parseInt(dateParts[1]);
             } catch (NumberFormatException e) {
                 continue;
             }
+
             if (recordMonth != month || !Utility.isValidTime(record[4]) ||
                     !Utility.isValidTime(record[5])) continue;
 
             double[] work = Utility.computeHours(record[4], record[5]);
+
             if (day <= 15) {
                 firstHours += work[0];
                 firstLate += work[1];
@@ -246,9 +344,14 @@ public class PayrollService {
                 secondLate += work[1];
             }
         }
+
         return new double[]{firstHours, secondHours, firstLate, secondLate};
     }
 
+    /**
+     * Calculates the employee's total salary deductions,
+     * including SSS, PhilHealth, Pag-IBIG, and income tax.
+     */
     private static double computeTotalDeductions(double basicSalary, double grossPay) {
         double sss = Utility.getSSS(basicSalary);
         double philHealth = (basicSalary * 0.03) / 2;
@@ -257,25 +360,49 @@ public class PayrollService {
         return sss + philHealth + pagIbig + Utility.getTax(taxable);
     }
 
+    /**
+     * Reads all employee records from the Employee Details CSV file
+     * and stores them in a list for payroll processing.
+     */
     private static List<String[]> loadEmployees() throws Exception {
+
         List<String[]> employees = new ArrayList<String[]>();
+
         try (BufferedReader br = new BufferedReader(new FileReader(EMPLOYEE_DETAILS_FILE))) {
+
             String line = br.readLine();
+
+            // Read every employee record from the CSV file.
             while ((line = br.readLine()) != null) {
-                if (!line.trim().isEmpty()) employees.add(Utility.manualSplit(line));
+                if (!line.trim().isEmpty()) {
+                    employees.add(Utility.manualSplit(line));
+                }
             }
         }
+
         return employees;
     }
 
+    /**
+     * Reads all attendance records from the Attendance CSV file
+     * and stores them in a list for payroll calculations.
+     */
     private static List<String[]> loadAttendance() throws Exception {
+
         List<String[]> records = new ArrayList<String[]>();
+
         try (BufferedReader br = new BufferedReader(new FileReader(ATTENDANCE_RECORD_FILE))) {
+
             String line = br.readLine();
+
+            // Read every attendance record from the CSV file.
             while ((line = br.readLine()) != null) {
-                if (!line.trim().isEmpty()) records.add(line.split(",", -1));
+                if (!line.trim().isEmpty()) {
+                    records.add(line.split(",", -1));
+                }
             }
         }
+
         return records;
     }
 }

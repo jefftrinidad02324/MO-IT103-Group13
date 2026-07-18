@@ -11,11 +11,12 @@ import java.util.List;
  */
 public class EmployeeService {
 
+     // Full path to the CSV file that stores all employee records
     static final String FILE =
             "src/main/java/com/mycompany/motorphpayroll/Employee Details.csv";
-
+    // First valid employee ID; no numbers below this are allowed
     public static final int MIN_EMPLOYEE_NUMBER = 10001;
-
+    // Column headers matching the exact order in the CSV file
     public static final String[] EMPLOYEE_COLUMNS = {
             "Employee Number", "Last Name", "First Name", "Birthday",
             "Address", "Phone Number", "SSS #", "PhilHealth #", "TIN #",
@@ -23,14 +24,18 @@ public class EmployeeService {
             "Basic Salary", "Rice Subsidy", "Phone Allowance",
             "Clothing Allowance", "Gross Semi-Monthly Rate", "Hourly Rate"
     };
-
+    //* Verifies if an employee number is valid.
+    //* Must be numeric and equal to or greater than MIN_EMPLOYEE_NUMBER (10001).
     public static boolean isEmployeeNumberInSeries(String employeeNumber) {
+        // Reject empty or non-numeric input
         if (employeeNumber == null || !employeeNumber.trim().matches("\\d+")) {
             return false;
         }
         try {
+           // Convert to integer and check minimum value 
             return Integer.parseInt(employeeNumber.trim()) >= MIN_EMPLOYEE_NUMBER;
         } catch (NumberFormatException e) {
+         // Return false if conversion fails unexpectedly    
             return false;
         }
     }
@@ -39,33 +44,39 @@ public class EmployeeService {
     public static String getNextEmployeeNumber() {
         int highest = MIN_EMPLOYEE_NUMBER - 1;
 
+        // Auto-close file reader when done
         try (BufferedReader br = new BufferedReader(new FileReader(FILE))) {
-            String line = br.readLine();
+            String line = br.readLine(); // Skip header row
             while ((line = br.readLine()) != null) {
                 if (line.trim().isEmpty()) {
-                    continue;
+                    continue; // Skip blank lines
                 }
                 String[] data = Utility.manualSplit(line);
                 if (data[0].trim().matches("\\d+")) {
                     int number = Integer.parseInt(data[0].trim());
                     if (number > highest) {
-                        highest = number;
+                        highest = number; // Update highest found ID
                     }
                 }
             }
         } catch (IOException e) {
+           // Fallback to first valid ID if file cannot be read 
             return String.valueOf(MIN_EMPLOYEE_NUMBER);
         }
 
         return String.valueOf(highest + 1);
     }
 
+    // * Finds and displays full employee details in the UI fields.
+     //* Shows error messages for invalid or missing IDs.
     public static void displayEmployee(String id, JTextField nameField, JTextArea output) {
+        // Check if input is empty
         if (id == null || id.trim().isEmpty()) {
             nameField.setText("");
             output.setText("Please enter your employee number to continue.");
             return;
         }
+        // Check if ID format is invalid
         if (!isEmployeeNumberInSeries(id)) {
             nameField.setText("");
             output.setText("Invalid employee number. Please enter a valid number starting from 10001.");
@@ -79,6 +90,7 @@ public class EmployeeService {
             return;
         }
 
+         // Format name and display full details
         String name = employee[2] + " " + employee[1];
         nameField.setText(name);
         output.setText(
@@ -99,15 +111,18 @@ public class EmployeeService {
         );
     }
 
+    //* Clears and reloads the employee table from the CSV file.
+    // * Shows selected columns for quick viewing.
     public static void loadEmployeesToTable(DefaultTableModel model) {
-        model.setRowCount(0);
+        model.setRowCount(0); // Clear existing rows first
         try (BufferedReader br = new BufferedReader(new FileReader(FILE))) {
-            String line = br.readLine();
+            String line = br.readLine(); // Skip header
             while ((line = br.readLine()) != null) {
                 if (line.trim().isEmpty()) {
                     continue;
                 }
                 String[] data = Utility.manualSplit(line);
+                // Add only key fields to the table
                 model.addRow(new Object[]{
                         data[0], data[1], data[2], data[3], data[6],
                         data[7], data[8], data[9], data[13], data[18]
@@ -119,6 +134,8 @@ public class EmployeeService {
         }
     }
 
+    //* Searches the CSV file for a single employee by ID.
+    //* Returns the full record array or null if not found.
     public static String[] findEmployee(String employeeNumber) {
         if (employeeNumber == null || employeeNumber.trim().isEmpty()) {
             return null;
@@ -131,7 +148,7 @@ public class EmployeeService {
                 }
                 String[] data = Utility.manualSplit(line);
                 if (data[0].trim().equals(employeeNumber.trim())) {
-                    return data;
+                    return data; // Return immediately when found
                 }
             }
         } catch (IOException e) {
@@ -141,6 +158,8 @@ public class EmployeeService {
         return null;
     }
 
+    //* Adds a new employee record to the CSV file.
+    //* Auto-generates the next ID and validates all input before saving.
     public static boolean addEmployee(String[] employee) {
         employee[0] = getNextEmployeeNumber();
         if (!isValidEmployee(employee)) {
@@ -149,7 +168,7 @@ public class EmployeeService {
 
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(FILE, true))) {
             if (new File(FILE).length() > 0) {
-                bw.newLine();
+                bw.newLine(); // Add line break if file already has content
             }
             bw.write(toCsvLine(employee));
             JOptionPane.showMessageDialog(null,
@@ -162,6 +181,8 @@ public class EmployeeService {
         }
     }
 
+    // * Updates an existing employee record.
+    // * Keeps the original ID, replaces all other fields, then rewrites the file.
     public static boolean updateEmployee(String originalEmployeeNumber, String[] updatedEmployee) {
         if (originalEmployeeNumber == null || originalEmployeeNumber.trim().isEmpty()) {
             JOptionPane.showMessageDialog(null,
@@ -208,6 +229,8 @@ public class EmployeeService {
                 "Employee record has been updated successfully.");
     }
 
+    // * Updates an existing employee record.
+    // * Keeps the original ID, replaces all other fields, then rewrites the file.
     public static boolean deleteEmployee(String employeeNumber) {
         if (employeeNumber == null || employeeNumber.trim().isEmpty()) {
             JOptionPane.showMessageDialog(null,
@@ -248,12 +271,16 @@ public class EmployeeService {
                 "Employee record has been deleted successfully.");
     }
 
+    //* Validates all employee fields against project rules.
+    // * Checks required fields, formats, and valid numeric values.
     private static boolean isValidEmployee(String[] employee) {
+         // Check array length matches column count
         if (employee == null || employee.length != EMPLOYEE_COLUMNS.length) {
             showValidation("The employee record is incomplete.");
             return false;
         }
 
+        // List of fields that cannot be empty
         int[] required = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 17, 18};
         for (int i = 0; i < required.length; i++) {
             int column = required[i];
@@ -263,6 +290,7 @@ public class EmployeeService {
             }
         }
 
+         // Validate ID, names, dates, and government IDs
         if (!isEmployeeNumberInSeries(employee[0])) {
             showValidation("Employee number must be numeric and start from 10001.");
             return false;
@@ -297,6 +325,7 @@ public class EmployeeService {
             return false;
         }
 
+         // Validate numeric fields
         int[] numericFields = {13, 14, 15, 16, 17, 18};
         for (int i = 0; i < numericFields.length; i++) {
             int column = numericFields[i];
@@ -306,6 +335,7 @@ public class EmployeeService {
             }
         }
 
+        // Ensure key salary values are positive
         if (Utility.parseDoubleSafe(employee[13]) <= 0 ||
                 Utility.parseDoubleSafe(employee[17]) <= 0 ||
                 Utility.parseDoubleSafe(employee[18]) <= 0) {
@@ -315,11 +345,14 @@ public class EmployeeService {
         return true;
     }
 
+    // * Shows a warning popup for validation errors.
     private static void showValidation(String message) {
         JOptionPane.showMessageDialog(null, message,
                 "Input Validation", JOptionPane.WARNING_MESSAGE);
     }
 
+    // * Saves employee data safely using a temporary file.
+    // * Prevents data loss if the original file is locked or damaged.
     private static boolean saveEmployees(String header, List<String[]> employees,
                                          String successMessage) {
         File original = new File(FILE);
@@ -338,6 +371,7 @@ public class EmployeeService {
             return false;
         }
 
+        // Replace original file only after new file is fully written
         if (original.exists() && !original.delete()) {
             temporary.delete();
             JOptionPane.showMessageDialog(null,
@@ -354,22 +388,25 @@ public class EmployeeService {
         return true;
     }
 
+    // * Converts an employee data array to a properly formatted CSV line.
+    // * Adds quotes around values with commas or special characters.
     private static String toCsvLine(String[] values) {
         StringBuilder line = new StringBuilder();
         for (int i = 0; i < values.length; i++) {
             String value = values[i] == null ? "" : values[i].trim();
             boolean quote = value.contains(",") || value.contains("\"") ||
                     value.contains("\n") || value.contains("\r");
-            value = value.replace("\"", "\"\"");
+            value = value.replace("\"", "\"\"");  // Escape quotes inside text
             if (quote) {
                 line.append('"').append(value).append('"');
             } else {
                 line.append(value);
             }
             if (i < values.length - 1) {
-                line.append(',');
+                line.append(','); // Add comma between fields
             }
         }
         return line.toString();
     }
 }
+
